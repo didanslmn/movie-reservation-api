@@ -1,0 +1,17 @@
+# Dependency List for Gin + GORM + PostgreSQL Project
+
+# Web framework
+github.com/gin-gonic/gin
+
+# ORM
+gorm.io/gorm
+gorm.io/driver/postgres
+
+# Environment variable loader
+github.com/joho/godotenv
+
+# Database migration tool
+github.com/golang-migrate/migrate/v4
+
+# Validator
+github.com/go-playground/validator/v10
