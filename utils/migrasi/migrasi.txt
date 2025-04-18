@@ -1,0 +1,7 @@
+
+
+// perintah file migrasi (contoh)
+migrate create -ext sql -dir migrations -seq create_movie_genres_table
+
+// up migrasi
+migrate -path ./migrations -database "postgres://postgres:godgame357@localhost:5432/movie_resrev?sslmode=disable" up 

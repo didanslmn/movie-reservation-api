@@ -37,7 +37,7 @@ func (r *genreRepository) Create(ctx context.Context, genre *model.Genre) error 
 		return errors.New("genre alredy exists")
 	}
 	// simpan ke db
-	if err := r.db.WithContext(ctx).Create(&genre).Error; err != nil {
+	if err := r.db.WithContext(ctx).Create(&genre).Error; err != nil { //.Create(&genre): GORM akan menjalankan query INSERT ke dalam tabel sesuai dengan struct genre (biasanya ke tabel genres).
 		return err
 	}
 	return nil

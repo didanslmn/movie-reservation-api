@@ -1,49 +1,49 @@
 package router
 
 import (
-	"github.com/didanslmn/movie-reservation-api/internal/genre/handler"
-	"github.com/didanslmn/movie-reservation-api/internal/genre/repository"
-	"github.com/didanslmn/movie-reservation-api/internal/genre/service"
-	mHandler "github.com/didanslmn/movie-reservation-api/internal/movie/handler"
+	genreHandler "github.com/didanslmn/movie-reservation-api/internal/genre/handler"
+	genreRepository "github.com/didanslmn/movie-reservation-api/internal/genre/repository"
+	genreRouter "github.com/didanslmn/movie-reservation-api/internal/genre/router" // Perbaikan di sini
+	genreService "github.com/didanslmn/movie-reservation-api/internal/genre/service"
+	"github.com/didanslmn/movie-reservation-api/internal/middleware"
+	movieHandler "github.com/didanslmn/movie-reservation-api/internal/movie/handler"
 	movieRepository "github.com/didanslmn/movie-reservation-api/internal/movie/repository"
+	movieRouter "github.com/didanslmn/movie-reservation-api/internal/movie/router" // Perbaikan di sini
 	movieService "github.com/didanslmn/movie-reservation-api/internal/movie/service"
+	userHandler "github.com/didanslmn/movie-reservation-api/internal/user/handler"
+	userRepository "github.com/didanslmn/movie-reservation-api/internal/user/repository"
+	userRouter "github.com/didanslmn/movie-reservation-api/internal/user/router" // Perbaikan di sini
+	userService "github.com/didanslmn/movie-reservation-api/internal/user/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
 
-func SetupRouter(db *gorm.DB) *gin.Engine {
+func SetupRouter(db *gorm.DB, jwtSecret string) *gin.Engine {
 	r := gin.Default()
 
-	// === Genre setup ===
-	genreRepo := repository.NewRepositoryGenre(db)
-	genreService := service.NewGenreService(genreRepo)
-	genreHandler := handler.NewGenreHandler(genreService)
+	// === User Setup ===
+	userRepo := userRepository.NewUserRepository(db)
+	userSvc := userService.NewUserService(userRepo, jwtSecret)
+	userHdl := userHandler.NewUserHandler(userSvc)
+	authMiddleware := middleware.JWTAuthMiddleware(jwtSecret)
 
-	// === Movie setup ===
+	// === Genre Setup ===
+	genreRepo := genreRepository.NewRepositoryGenre(db)
+	genreSvc := genreService.NewGenreService(genreRepo)
+	genreHdl := genreHandler.NewGenreHandler(genreSvc)
+
+	// === Movie Setup ===
 	movieRepo := movieRepository.NewRepositoryMovie(db)
 	movieSvc := movieService.NewMovieService(movieRepo, genreRepo)
-	movieHandler := mHandler.NewMovieHandler(movieSvc)
+	movieHdl := movieHandler.NewMovieHandler(movieSvc)
 
-	// Genre routes
-	genreRoutes := r.Group("/genres")
-	{
-		genreRoutes.POST("", genreHandler.CreateGenre)
-		genreRoutes.GET("", genreHandler.GetAllGenres)
-		genreRoutes.GET("/:id", genreHandler.GetGenre)
-		genreRoutes.PUT("/:id", genreHandler.UpdateGenre)
-		genreRoutes.DELETE("/:id", genreHandler.DeleteGenre)
-	}
-
-	// Movie routes
-	movieRoutes := r.Group("/movies")
-	{
-		movieRoutes.POST("", movieHandler.CreateMovie)
-		movieRoutes.GET("", movieHandler.GetAllMovies)
-		movieRoutes.GET("/:id", movieHandler.GetMovie)
-		movieRoutes.PUT("/:id", movieHandler.UpdateMovie)
-		movieRoutes.DELETE("/:id", movieHandler.DeleteMovie)
-		movieRoutes.GET("/genre/:id", movieHandler.GetMoviesByGenre)
-	}
+	// Register routes
+	api := r.Group("/api/v1")
+	userRouter.RegisterUserRoutes(api, userHdl, authMiddleware)
+	authGroup := api.Group("/")
+	authGroup.Use(authMiddleware)
+	genreRouter.RegisterGenreRoutes(authGroup, genreHdl, jwtSecret)
+	movieRouter.RegisterMovieRoutes(authGroup, movieHdl, jwtSecret)
 
 	return r
 }
